@@ -3,14 +3,12 @@ where
 
 import Network
 import System.IO
-import Control.Monad.Trans
-import Control.Monad.Reader
-import Control.Monad.Writer
-import Control.Monad.State
-import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString as B
 import Data.Word
+import Data.Binary.Get
 import Data.Bits
-import Bytes
+import Control.Monad.Writer
 
 type Log = [LogRecord]
 data LogLevel = Bytes | Structures | Logic
@@ -21,58 +19,28 @@ logB s = tell [(Bytes, s)]
 logS s = tell [(Structures, s)]
 logL s = tell [(Logic, s)]
 
-type Action = WriterT Log (ReaderT Handle IO)
 
-main = withSocketsDo $ perform
+main = do
+  handle <- connection
+  ver <- execute handle getWord24le
+  print ver
 
-runAction :: Handle -> Action a -> IO a
-runAction h action = runReaderT (runWriterT action) h >>=
-  \(result, log) -> mapM_ print log >> return result
+connection = connectTo "localhost" $ PortNumber 3306
 
-port = PortNumber 3306
+execute :: Handle -> Get a -> IO a
+execute handler action = do
+  string <- L.hGetContents handler
+  return $ runGet action string
 
-perform :: IO Handle
-perform = do
-  handle <- connectTo "localhost" port
-  runAction handle mainAction
-  return handle
-
-mainAction :: Action ()
-mainAction = handshake >> handshake
-
-handshake = do
-  ver <- readPacket
-  logL $ "Version is " ++ show ver
-  return ()
-
-readBytes :: Int -> Action Bytes
-readBytes n = do
-  h <- ask
-  res <- liftIO $ BS.hGet h n
-  logB $ "Read " ++ show n ++ " bytes: "  ++ show res
-  return res
-
-skip :: Int -> Action ()
-skip n = do
-  bytes  <- readBytes n
-  logB $ "Skipping " ++ (show n) ++  " bytes: " ++ show bytes
-  return ()
-
-readWord32 :: Action Word32
-readWord32 = do
-  word32 <- toWord32 `fmap` readBytes 4
-  logS $ "Reading word32 " ++ show word32
-  return word32
-
-readWord24 :: Action Word32 -- TODO Separate type
-readWord24 = do
-  word24 <- toWord32 `fmap` readBytes 3
-  logS $ "Reading word24 " ++ show word24
-  return word24
-
-readPacket :: Action Bytes
+readPacket :: Get B.ByteString
 readPacket = do
-  length <- readWord24
-  logS $ "Received packet length " ++ show length
-  skip 1
-  readBytes $ fromIntegral length
+  version <- getWord24le
+  return $ B.empty
+
+
+getWord24le :: Get Word32 -- TODO Word24 structure
+getWord24le = do
+    s <- fmap id $ getByteString 3
+    return $! (fromIntegral (s `B.index` 2) `shiftL` 16) .|.
+              (fromIntegral (s `B.index` 1) `shiftL`  8) .|.
+              (fromIntegral (s `B.index` 0) )
