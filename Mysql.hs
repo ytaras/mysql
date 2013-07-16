@@ -19,8 +19,13 @@ port = PortNumber 3306
 perform :: IO Handle
 perform = do
   handle <- connectTo "localhost" port
-  runAction handle $ skip 2
+  runAction handle mainAction
   return handle
+
+mainAction :: Action ()
+mainAction = do
+  skip 1
+  skip 4
 
 readBytes :: Int -> Action ByteString
 readBytes n = ask >>= \h -> liftIO $ BS.hGet h n
@@ -31,8 +36,6 @@ runAction h action = runReaderT (runWriterT action) h >>=
 
 skip :: Int -> Action ()
 skip n = do
-  handle <- ask
-  -- TODO WTF????
-  bytes  <- lift $ lift $ BS.hGet handle n
+  bytes  <- readBytes n
   tell $ ["Skipping " ++ (show n) ++  " bytes: " ++ show bytes]
   return ()
