@@ -1,4 +1,4 @@
-module Mysql (main)
+module Main (main)
 where
 
 import Network
@@ -22,8 +22,8 @@ logL s = tell [(Logic, s)]
 
 main = do
   handle <- connection
-  ver <- execute handle getWord24le
-  print ver
+  version <- execute handle versionPacket
+  print version
 
 connection = connectTo "localhost" $ PortNumber 3306
 
@@ -32,11 +32,26 @@ execute handler action = do
   string <- L.hGetContents handler
   return $ runGet action string
 
-readPacket :: Get B.ByteString
-readPacket = do
-  version <- getWord24le
-  return $ B.empty
+packet :: Get B.ByteString
+packet = do
+  length <- getWord24le
+  skip 1
+  getByteString $ fromIntegral length
 
+data Version = Version { protocol :: Int
+                         , serverVersion :: L.ByteString }
+               deriving Show
+
+version :: Get Version
+version = do
+   protocol <- fromIntegral `fmap` getWord8
+   serverVersion <- getLazyByteStringNul
+   return $ Version protocol serverVersion
+
+versionPacket :: Get Version
+versionPacket = do
+  v <- packet
+  return $ runGet version (L.fromStrict v)
 
 getWord24le :: Get Word32 -- TODO Word24 structure
 getWord24le = do

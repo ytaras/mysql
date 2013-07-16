@@ -50,4 +50,8 @@ executable mysql
   -- other-modules:
 
   -- Other library packages from which modules are imported.
-  build-depends:       base >= 4.6 && < 5, data-dword ==0.2.2
+  build-depends:       base >= 4.5 && < 5,
+                       bytestring ==0.10.2.*,
+                       mtl,
+                       binary,
+                       network
