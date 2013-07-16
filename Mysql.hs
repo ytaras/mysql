@@ -43,6 +43,7 @@ version = do
    serverVersion <- L.toStrict `fmap` getLazyByteStringNul
    return $ Version protocol serverVersion
 
+
 parsePacket :: Get a -> Get a
 parsePacket action = do
   v <- do
