@@ -2,6 +2,7 @@ module Mysql.LowParser
        ( nullTerminatedString
        , parsePacket
        , executeParserM
+       , skipWords
        , B.ByteString )
 where
 

@@ -1,5 +1,5 @@
 module Mysql.HighParser
-       (version
+       ( version
        , executeParserM
        , Parser)
 where
