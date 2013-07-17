@@ -1,12 +1,15 @@
-module Parser (version)
+module Mysql.HighParser
+       (version
+       , executeParserM
+       , Parser)
 where
 
-import Data.Mysql
+import Mysql.Data
 import Data.Attoparsec.ByteString.Lazy
 import Prelude hiding (take, takeWhile)
 import Control.Monad.Trans
-import Error
-import LowLevelParser
+import Mysql.Error
+import Mysql.LowParser
 
 version :: Parser Version
 version = parsePacket $ do

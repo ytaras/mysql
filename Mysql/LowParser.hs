@@ -1,6 +1,7 @@
-module LowLevelParser
+module Mysql.LowParser
        ( nullTerminatedString
        , parsePacket
+       , executeParserM
        , B.ByteString )
 where
 
@@ -10,6 +11,7 @@ import Data.Attoparsec.ByteString.Lazy
 import Prelude hiding (take, takeWhile)
 import Data.Bits
 import Data.Word
+import Mysql.Error
 import Control.Applicative
 
 
@@ -34,3 +36,9 @@ parsePacket action = do
   case eitherResult $ parse action str of
     Right result -> return result
     Left err -> fail err
+
+executeParserM :: Monad m => Parser a -> L.ByteString -> ThrowsError m a
+executeParserM parser str = do
+  case eitherResult $ parse parser str of
+    Right result -> return result
+    Left err -> dieS err

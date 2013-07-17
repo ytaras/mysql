@@ -1,4 +1,12 @@
-module Error (ThrowsError)
+module Mysql.Error
+       (ThrowsError
+       , die
+       , dieS
+       , assert
+       , assertS
+       , lift
+       , liftThrows
+       , toIO )
 where
 
 import Control.Monad.Error
@@ -27,3 +35,9 @@ trapError a = catchError a $ return . show
 
 liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val
+
+toIO :: ThrowsError IO a -> IO a
+toIO c = do
+  res <- runErrorT c
+  case res of
+    Right v -> return v

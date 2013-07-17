@@ -1,4 +1,4 @@
-module Data.Mysql (Version(..))
+module Mysql.Data (Version(..))
 where
 
 import Data.ByteString
