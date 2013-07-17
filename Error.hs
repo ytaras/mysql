@@ -1,7 +1,8 @@
-module Error ()
+module Error (ThrowsError)
 where
 
 import Control.Monad.Error
+import Control.Exception (try)
 
 data MysqlError = Generic String deriving Show
 
@@ -20,3 +21,9 @@ die = throwError
 
 assert :: Monad a => Bool -> MysqlError -> ThrowsError a ()
 assert f e = if f then die e else return ()
+
+trapError :: (Show e, MonadError e m) => m String -> m String
+trapError a = catchError a $ return . show
+
+liftThrows (Left err) = throwError err
+liftThrows (Right val) = return val
